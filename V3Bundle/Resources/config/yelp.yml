@@ -1,0 +1,6 @@
+parameters:
+    yelp:
+        yelp_v3:
+            consumer_key:    'your_app_id_here'
+            consumer_secret: 'your_secret_here'
+            grant_type: 'client_credentials'        

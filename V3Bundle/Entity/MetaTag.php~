@@ -1,0 +1,61 @@
+<?php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * MetaTag
+ *
+ * @ORM\Table(name="meta_tag")
+ * @ORM\Entity
+ */
+class MetaTag
+{
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="type", type="string", nullable=false)
+     */
+    private $type;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="controller", type="string", nullable=true)
+     */
+    private $controller;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="action", type="string", nullable=true)
+     */
+    private $action;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="keyword", type="string", nullable=true)
+     */
+    private $keyword;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="tag", type="string", length=255, nullable=false)
+     */
+    private $tag;
+
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="smallint")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="IDENTITY")
+     */
+    private $id;
+
+
+}
+
