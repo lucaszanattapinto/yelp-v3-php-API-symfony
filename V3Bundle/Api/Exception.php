@@ -16,7 +16,7 @@ class Exception extends BaseException
      *
      * @param string $body
      *
-     * @return  Stevenmaguire\Yelp\Exception
+     * @return  BaseException
      */
     public function setResponseBody($body = null)
     {

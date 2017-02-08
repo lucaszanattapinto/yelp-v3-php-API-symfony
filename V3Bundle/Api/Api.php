@@ -1,9 +1,12 @@
-<?php namespace Yelp\V3Bundle\Api;
+<?php
+
+namespace Yelp\V3Bundle\Api;
 
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use AppBundle\Entity\YelpAccessToken;
 use Doctrine\ORM\EntityManager;
+use Yelp\V3Bundle\Entity\YelpAccessToken;
 
 class Api
 {
@@ -40,7 +43,7 @@ class Api
      *
      * @var string
      */
-    protected $defaultTerm = 'restaurants';
+    protected $defaultTerm = 'business';
 
     /**
      * Default location
@@ -108,14 +111,14 @@ class Api
     /**
      * [$httpClient description]
      *
-     * @var [type]
+     * @var Client
      */
     protected $httpClient;
 
     /**
      * Doctrine entity manager
      * 
-     * @var type 
+     * @var EntityManager
      */
     protected $em;
     
@@ -128,9 +131,9 @@ class Api
     {
         $this->em = $em;
         
-        $this->parseConfiguration($configuration)
-            ->createHttpClient()
-            ->setAccessToken();
+        $this->parseConfiguration($configuration);
+        $this->createHttpClient();
+        $this->setAccessToken();
     }
 
     /**
@@ -142,7 +145,7 @@ class Api
     protected function setAccessToken()
     {
         // try to get access token from db
-        $repository = $this->em->getRepository('AppBundle:YelpAccessToken');
+        $repository = $this->em->getRepository('YelpV3Bundle:YelpAccessToken');
 
         // createQueryBuilder automatically selects FROM 
         $query = $repository->createQueryBuilder('yat')
@@ -150,14 +153,14 @@ class Api
             ->setParameter('curTime', date('Y-m-d H:i:s',time()))
             ->getQuery();
 
-        $res = $query->setMaxResults(1)->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);  
+        $res = $query->setMaxResults(1)->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
         
         if(isset($res['accessToken']))
         {
             // token exists, let's init it
-            $this->access_token = $res['accessToken'];
+            self::$access_token = $res['accessToken'];
         }
-        else
+        elseif($this->getConsumerKey() && $this->getConsumerSecret())
         {
             // if there is no token, set new access token (retreive it from Auth url)
             $this->setNewAccessTokenFromAuth();
@@ -169,46 +172,55 @@ class Api
     protected function setNewAccessTokenFromAuth()
     {
         // try to get access token from API
-        $auth2Response = $this->httpClient->request(
-            'POST', 
+        $request = $this->httpClient->createRequest(
+            'POST',
             'https://' . $this->apiHost . $this->oauth2TokenPath,
             [
-                'query'   => [
+                'headers' => ['Content-Type' => 'application/x-www-form-urlencoded'],
+                'body'   => [
                     'grant_type' => 'client_credentials',
                     'client_id' => $this->consumerKey,
                     'client_secret' => $this->consumerSecret,
                 ]
             ]
         );
-                        
-        $decodedArr = json_decode($auth2Response->getBody(), true);
-        
-        if(isset($decodedArr['access_token']))
+
+        $response = $this->httpClient->send($request)->json();
+
+        if(isset($response['access_token']))
         {
             // init by new token
-            $this->access_token = $decodedArr['access_token'];            
+            self::$access_token = $response['access_token'];
 
             // clear table with old token
-            $q = $this->em->createQuery('delete from AppBundle\Entity\YelpAccessToken');
+            $q = $this->em->createQuery('DELETE FROM YelpV3Bundle:YelpAccessToken');
             $q->execute();
                         
             $expiredDate = new \DateTime();
-            $expiredDate->setTimestamp(time() + $decodedArr['expires_in']);
+            $expiredDate->setTimestamp(time() + $response['expires_in']);
             
             // add new token to db instead of old one            
             $newAccTokenObj = new YelpAccessToken();
             $newAccTokenObj->setExpired($expiredDate);
             $newAccTokenObj->setCreated(new \DateTime());            
-            $newAccTokenObj->setAccessToken($decodedArr['access_token']);
+            $newAccTokenObj->setAccessToken($response['access_token']);
 
             // tells Doctrine you want to (eventually) save 
             $this->em->persist($newAccTokenObj);
 
             // actually executes the queries (i.e. the INSERT query)
             $this->em->flush();            
-        }                        
+        }
                 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public static function getAccessToken()
+    {
+        return self::$access_token;
     }
 
     /**
@@ -276,7 +288,6 @@ class Api
         $defaults = array(
             'term' => $this->defaultTerm,
             'location' => $this->defaultLocation,
-            'limit' => $this->searchLimit
         );
         
         $attributes = array_merge($defaults, $attributes);
@@ -383,10 +394,9 @@ class Api
     /**
      * Makes a request to the Yelp API and returns the response
      *
-     * @param    string $path    The path of the APi after the domain
-     *
-     * @return   stdClass The JSON response from the request
-     * @throws   Exception
+     * @param    string $path The path of the APi after the domain
+     * @return stdClass The JSON response from the request
+     * @throws \Exception
      */
     protected function request($path)
     {
@@ -394,11 +404,11 @@ class Api
 
         try 
         {
-            $response = $this->httpClient->request(
+            $request = $this->httpClient->createRequest(
                 'get', 
                 $url,
                 [                    
-                    'headers' => ['Authorization' => "Bearer {$this->access_token}"],
+                    'headers' => ['Authorization' => "Bearer ".self::$access_token],
                 ]
             );            
         }
@@ -409,7 +419,9 @@ class Api
             throw $exception->setResponseBody($e->getResponse()->getBody());
         }
 
-        return json_decode($response->getBody(), true);
+        $response = $this->httpClient->send($request);
+
+        return $response->json();
     }
 
     /**
@@ -439,6 +451,22 @@ class Api
         $path = $this->phoneSearchPath . "?" . $this->prepareQueryParams(['phone' => $phone]);
 
         return $this->request($path);
+    }
+
+    /**
+     * @return string
+     */
+    public function getConsumerKey()
+    {
+        return $this->consumerKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getConsumerSecret()
+    {
+        return $this->consumerSecret;
     }
 
     /**
@@ -494,6 +522,13 @@ class Api
     public function setHttpClient(HttpClient $client)
     {
         $this->httpClient = $client;
+
+        return $this;
+    }
+
+    public function setHttpClientVerify($isSecure)
+    {
+        $this->httpClient->setDefaultOption('verify', $isSecure);
 
         return $this;
     }

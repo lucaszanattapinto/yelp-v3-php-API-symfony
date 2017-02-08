@@ -1,13 +1,13 @@
 <?php
 
-namespace AppBundle\Entity;
+namespace Yelp\V3Bundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * YelpAccessToken
  *
- * @ORM\Table(name="yelp_access_token")
+ * @ORM\Table(name="YelpAccessToken")
  * @ORM\Entity
  */
 class YelpAccessToken
@@ -31,7 +31,7 @@ class YelpAccessToken
      *
      * @ORM\Column(name="access_token", type="string", length=255)
      * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
+     * @ORM\GeneratedValue(strategy="NONE")
      */
     private $accessToken;
 

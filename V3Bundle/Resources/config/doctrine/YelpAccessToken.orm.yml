@@ -1,4 +1,4 @@
-AppBundle\Entity\YelpAccessToken:
+V3Bundle\Entity\YelpAccessToken:
     type: entity
     table: yelp_access_token
     id:
