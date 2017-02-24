@@ -1,0 +1,7 @@
+parameters:
+    yelp.helper.class: Yelp\V3Bundle\Helper\ApiHelper
+
+services:
+    helper.yelp:
+        class: %yelp.helper.class%
+        arguments: [@service_container]

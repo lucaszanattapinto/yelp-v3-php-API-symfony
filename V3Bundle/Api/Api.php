@@ -288,6 +288,7 @@ class Api
         $defaults = array(
             'term' => $this->defaultTerm,
             'location' => $this->defaultLocation,
+            'limit' => $this->searchLimit,
         );
         
         $attributes = array_merge($defaults, $attributes);

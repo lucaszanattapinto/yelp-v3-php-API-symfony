@@ -16,14 +16,14 @@ use Yelp\V3Bundle\Entity\Cache;
 class CacheRepository extends EntityRepository
 {
     /**
-     * @param string $keyword
-     * @param string $businesses
+     * @param array $searchCriteria
+     * @param array $businesses
      * @param ObjectManager $em
      */
-    public function save($keyword, $businesses, $em)
+    public function save($searchCriteria, $businesses, $em)
     {
         $cache = new Cache();
-        $cache->setSearchKeyword($keyword);
+        $cache->setSearchCriteria($searchCriteria);
         $cache->setResponse($businesses);
         $em->persist($cache);
         $em->flush();

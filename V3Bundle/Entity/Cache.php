@@ -15,11 +15,11 @@ class Cache
     /**
      * @var string
      *
-     * @ORM\Column(name="search_keyword", type="string", length=255)
+     * @ORM\Column(name="search_criteria", type="string")
      * @ORM\Id
      * @ORM\GeneratedValue(strategy="NONE")
      */
-    private $searchKeyword;
+    private $searchCriteria;
 
     /**
      * @var string
@@ -28,21 +28,6 @@ class Cache
      */
     private $response;
 
-    /**
-     * @return string
-     */
-    public function getSearchKeyword()
-    {
-        return $this->searchKeyword;
-    }
-
-    /**
-     * @param string $searchKeyword
-     */
-    public function setSearchKeyword($searchKeyword)
-    {
-        $this->searchKeyword = $searchKeyword;
-    }
 
     /**
      * @return string
@@ -58,6 +43,22 @@ class Cache
     public function setResponse($response)
     {
         $this->response = $response;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSearchCriteria()
+    {
+        return $this->searchCriteria;
+    }
+
+    /**
+     * @param string $searchCriteria
+     */
+    public function setSearchCriteria($searchCriteria)
+    {
+        $this->searchCriteria = $searchCriteria;
     }
 
 
